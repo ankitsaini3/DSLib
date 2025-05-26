@@ -13,6 +13,13 @@ public:
     using reference         = typename std::iterator_traits<IteratorType>::reference;
 
     NormalIterator() : current() {}
+
+
+    template<typename Iter>
+    NormalIterator(const NormalIterator<Iter, Container>& other,
+     std::enable_if_t< std::is_convertible_v<Iter, IteratorType>, int > = 0) : current(other.base()) {}
+
+
     explicit NormalIterator(const IteratorType& it) : current(it) {}
 
     reference operator*() const { return *current; }
@@ -34,15 +41,38 @@ public:
 
     reference operator[](difference_type n) const { return current[n]; }
 
-    bool operator==(const NormalIterator& other) const { return current == other.current; }
-    bool operator!=(const NormalIterator& other) const { return current != other.current; }
-    bool operator<(const NormalIterator& other) const { return current < other.current; }
-    bool operator<=(const NormalIterator& other) const { return current <= other.current; }
-    bool operator>(const NormalIterator& other) const { return current > other.current; }
-    bool operator>=(const NormalIterator& other) const { return current >= other.current; }
-
     IteratorType base() const { return current; }
 
 private:
     IteratorType current;
 };
+
+template <typename Iter1, typename Iter2, typename Container>
+bool operator!=(const NormalIterator<Iter1, Container>& lhs, const NormalIterator<Iter2, Container>& rhs) {
+    return lhs.base() != rhs.base();
+}
+
+template <typename Iter1, typename Iter2, typename Container>
+bool operator==(const NormalIterator<Iter1, Container>& lhs, const NormalIterator<Iter2, Container>& rhs) {
+    return lhs.base() == rhs.base();
+}
+
+template <typename Iter1, typename Iter2, typename Container>
+bool operator<(const NormalIterator<Iter1, Container>& lhs, const NormalIterator<Iter2, Container>& rhs) {
+    return lhs.base() < rhs.base();
+}
+
+template <typename Iter1, typename Iter2, typename Container>
+bool operator>(const NormalIterator<Iter1, Container>& lhs, const NormalIterator<Iter2, Container>& rhs) {
+    return lhs.base() > rhs.base();
+}
+
+template <typename Iter1, typename Iter2, typename Container>
+bool operator<=(const NormalIterator<Iter1, Container>& lhs, const NormalIterator<Iter2, Container>& rhs) {
+    return lhs.base() <= rhs.base();
+}
+
+template <typename Iter1, typename Iter2, typename Container>
+bool operator>=(const NormalIterator<Iter1, Container>& lhs, const NormalIterator<Iter2, Container>& rhs) {
+    return lhs.base() >= rhs.base();
+}
