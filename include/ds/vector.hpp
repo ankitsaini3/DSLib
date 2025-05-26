@@ -77,6 +77,9 @@ namespace ds
         iterator insert(const_iterator _position, size_type _count, const T &_value_);
         iterator insert(const_iterator _position, const std::initializer_list<T> _li);
 
+        template <typename... Args>
+        iterator emplace(const_iterator _position, Args &&...args);
+
         void push_back(const T &_value);
         void push_back(T &&_value);
         void pop_back();
@@ -615,6 +618,45 @@ namespace ds
         return pos;
     }
 
-    
+    template <typename T>
+    template <typename... Args>
+    typename vector<T>::iterator vector<T>::emplace(const_iterator _position, Args &&...args)
+    {
+        const size_type insert_index = _position.base() - array;
+        iterator pos = begin() + insert_index;
+
+        T tempObj(std::forward<Args>(args)...);
+
+        if (vectorSize == reservedSize)
+        {
+            if (reservedSize == 0)
+            {
+                reservedSize = 1;
+            }
+            else
+            {
+                reservedSize = reservedSize * 2;
+            }
+
+            reallocate();
+        }
+
+        if (insert_index <= vectorSize)
+        {
+            // construct element at some other place then move assign it at _position
+
+            for (size_type i = vectorSize; i - 1 >= insert_index; --i)
+            {
+                array[i] = std::move(array[i - 1]);
+            }
+
+            new (array + insert_index) T(std::move(tempObj));
+        }
+
+        vectorSize++;
+        pos = begin() + insert_index;
+
+        return pos;
+    }
 
 }
