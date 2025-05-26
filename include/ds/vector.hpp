@@ -80,6 +80,8 @@ namespace ds
         template <typename... Args>
         iterator emplace(const_iterator _position, Args &&...args);
 
+        iterator erase(iterator _position);
+
         void push_back(const T &_value);
         void push_back(T &&_value);
         void pop_back();
@@ -657,6 +659,53 @@ namespace ds
         pos = begin() + insert_index;
 
         return pos;
+    }
+
+
+    template <typename T>
+    typename vector<T>::iterator vector<T>::erase(vector<T>::iterator _position)
+    {
+        const size_t erase_index = _position.base() - array;
+
+        T backup = array[erase_index]; // If T is cheap to copy
+
+        try
+        {
+            for (size_t i = erase_index; i < vectorSize - 1; ++i)
+                array[i] = std::move(array[i + 1]);
+        }
+        catch (...)
+        {
+            array[erase_index] = std::move(backup); // Rollback
+            throw;
+        }
+
+        array[vectorSize - 1].~T();
+
+        vectorSize--;
+
+        return begin() + erase_index;
+    }
+
+
+    template <typename T>
+    void vector<T>::reserve(vector<T>::size_type new_cap)
+    {
+        if (new_cap > reservedSize)
+        {
+            reservedSize = new_cap;
+            reallocate();
+        }
+    }
+
+    template <typename T>
+    void vector<T>::shrink_to_fit()
+    {
+        if (reservedSize > vectorSize)
+        {
+            reservedSize = vectorSize;
+            reallocate();
+        }
     }
 
 }
