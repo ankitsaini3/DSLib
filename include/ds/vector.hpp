@@ -16,17 +16,16 @@ namespace ds
 
     public:
         using value_type = T;
-        using pointer = T*;
-        using const_pointer = const T*;
-        using reference = T&;
-        using const_reference = const T&;
+        using pointer = T *;
+        using const_pointer = const T *;
+        using reference = T &;
+        using const_reference = const T &;
         using size_type = std::size_t;
 
         using iterator = NormalIterator<pointer, vector>;
         using const_iterator = NormalIterator<const_pointer, vector>;
 
-
-       // constructors
+        // constructors
         vector() noexcept;
         explicit vector(size_type _count);
         vector(size_type count, const T &_value);
@@ -34,53 +33,49 @@ namespace ds
         vector(vector &&_temp) noexcept;
         vector(std::initializer_list<T> _li);
 
-
-        //destructors
+        // destructors
         ~vector() noexcept;
 
-       
-       // operator=
+        // operator=
         vector &operator=(const vector<T> &_other);
         vector &operator=(vector<T> &&_other) noexcept;
-       
 
         // element access
         reference at(size_type _index);
         const_reference at(size_type _index) const;
 
-        reference operator[](size_type _index) { return *(array + _index); }; 
+        reference operator[](size_type _index) { return *(array + _index); };
         const_reference operator[](size_type _index) const { return *(array + _index); };
 
-        reference front() { return array; };
-        const_reference front() const { return array; };
+        reference front() { return *array; };
+        const_reference front() const { return *array; };
 
-        reference back() { return *(array + vectorSize-1); };
-        const_reference back() const { return *(array + vectorSize -1);};
-
+        reference back() { return *(array + vectorSize - 1); };
+        const_reference back() const { return *(array + vectorSize - 1); };
 
         // iterators
         iterator begin() { return iterator(array); }
-        iterator end() { return iterator(array + vectorSize); }
-        const_iterator cbegin() { return const_iterator(array); } const
-        const_iterator cend() { return const_iterator(array + vectorSize); } const
+        const_iterator begin() const { return const_iterator(array); }
 
+        iterator end() { return iterator(array + vectorSize); }
+        const_iterator end() const { return const_iterator(array + vectorSize); }
+
+        const_iterator cbegin() const { return const_iterator(array); }
+        const_iterator cend() const { return const_iterator(array + vectorSize); }
 
         // capacity
-        size_type size() {return vectorSize; }
+        size_type size() { return vectorSize; }
         size_type capacity() { return reservedSize; }
         bool empty() { return vectorSize == 0; };
-
+        void reserve(size_type new_cap);
+        void shrink_to_fit();
 
         // modifiers
         void clear();
-        iterator insert(const_iterator _position, const T& _value);
-        iterator insert(const_iterator _position, T&& _value);
-        iterator insert(const_iterator _position, size_type _count, const T& _value_);
-        iterator insert(const_iterator _position, const std::initializer_list<T> _li);
+
         void push_back(const T &_value);
         void push_back(T &&_value);
         void pop_back();
-
 
     private:
         pointer array;
@@ -91,14 +86,10 @@ namespace ds
         inline void reallocate();
     };
 
-
-
-
-
     template <typename T>
     void vector<T>::reallocate()
     {
-        pointer tempArray = reinterpret_cast<T *>(new char[reservedSize * sizeof(T)]);
+        pointer tempArray = static_cast<T *>(::operator new(reservedSize * sizeof(T)));
 
         for (size_type i = 0; i < vectorSize; i++)
         {
@@ -110,21 +101,18 @@ namespace ds
             array[i].~T();
         }
 
-        delete[] reinterpret_cast<char *>(array);
+        ::operator delete(array);
 
         array = tempArray;
     }
-
 
     // default constructor
     template <typename T>
     vector<T>::vector() noexcept
     {
         std::cout << "default constructor called " << this << "\n";
-        array = reinterpret_cast<T *>(new char[reservedSize * sizeof(T)]);
+        array = static_cast<T *>(::operator new(reservedSize * sizeof(T)));
     }
-
-
 
     // default destructor
     template <typename T>
@@ -137,20 +125,17 @@ namespace ds
             array[i].~T();
         }
 
-        delete[] reinterpret_cast<char *>(array);
+        ::operator delete(array);
     }
-
-
 
     // parameterised constructor
     template <typename T>
-    vector<T>::vector(size_type _count) :
-     reservedSize(_count),
-     vectorSize(_count)
+    vector<T>::vector(size_type _count) : reservedSize(_count),
+                                          vectorSize(_count)
     {
         std::cout << "parameterized constructor (size_type n) called " << this << "\n";
 
-        array = reinterpret_cast<T *>(new char[reservedSize * sizeof(T)]);
+        array = static_cast<T *>(::operator new(reservedSize * sizeof(T)));
 
         for (size_type i = 0; i < vectorSize; i++)
         {
@@ -158,18 +143,14 @@ namespace ds
         }
     }
 
-
-
-
     // parameterised constructor
     template <typename T>
-    vector<T>::vector(size_type _count, const T &_value) : 
-     reservedSize(_count),
-     vectorSize(_count)
+    vector<T>::vector(size_type _count, const T &_value) : reservedSize(_count),
+                                                           vectorSize(_count)
     {
         std::cout << "parameterized constructor (size_type n, const T& value) called\n";
 
-        array = reinterpret_cast<T *>(new char[reservedSize * sizeof(T)]);
+        array = static_cast<T *>(::operator new(reservedSize * sizeof(T)));
 
         for (size_type i = 0; i < vectorSize; i++)
         {
@@ -177,40 +158,31 @@ namespace ds
         }
     }
 
-
-
-
-
     // initializer list constructor
     template <typename T>
-    vector<T>::vector(std::initializer_list<T> _li) : 
-     reservedSize(_li.size())
+    vector<T>::vector(std::initializer_list<T> _li) : reservedSize(_li.size())
     {
 
         std::cout << "initializer list constructor called" << this << "\n";
 
-        array = reinterpret_cast<T *>(new char[reservedSize * sizeof(T)]);
+        array = static_cast<T *>(::operator new(reservedSize * sizeof(T)));
 
-        for (auto &v : _li)
+        for (typename std::initializer_list<T>::const_iterator it = _li.begin(); it != _li.end(); it++)
         {
-            new (array + vectorSize) T(v);
+            new (array + vectorSize) T(*it);
             ++vectorSize;
         }
     }
 
-    
-
-
     // copy constructor
     template <typename T>
-    vector<T>::vector(const vector<T> &_other) : 
-     reservedSize(_other.reservedSize),
-     vectorSize(_other.vectorSize)
+    vector<T>::vector(const vector<T> &_other) : reservedSize(_other.reservedSize),
+                                                 vectorSize(_other.vectorSize)
     {
 
         std::cout << "copy constructor called " << this << "\n";
 
-        array = reinterpret_cast<T *>(new char[reservedSize * sizeof(T)]);
+        array = static_cast<T *>(::operator new(reservedSize * sizeof(T)));
 
         for (size_type i = 0; i < vectorSize; ++i)
         {
@@ -218,24 +190,16 @@ namespace ds
         }
     }
 
-
-
-
-
     // move constructor
     template <typename T>
-    vector<T>::vector(vector<T> &&_temp) noexcept :
-     array(_temp.array),
-     reservedSize(_temp.reservedSize),
-     vectorSize(_temp.vectorSize)                             
+    vector<T>::vector(vector<T> &&_temp) noexcept : array(_temp.array),
+                                                    reservedSize(_temp.reservedSize),
+                                                    vectorSize(_temp.vectorSize)
     {
         std::cout << "move constructor called\n";
         _temp.array = nullptr;
         _temp.vectorSize = _temp.reservedSize = 0;
     }
-
-
-
 
     // copy assignment
     template <typename T>
@@ -249,51 +213,46 @@ namespace ds
             return *this;
         }
 
-        if (_other.vectorSize > this->vectorSize)
+        if (vectorSize < _other.vectorSize)
         {
-            T *tempArray = reinterpret_cast<T *>(new char[_other.reservedSize * sizeof(T)]);
+
+            for (size_type i = 0; i < vectorSize; i++)
+            {
+                array[i].~T();
+            }
+
+            ::operator delete(array);
+
+            T *tempArray = static_cast<T *>(::operator new(_other.reservedSize * sizeof(T)));
 
             for (size_type i = 0; i < _other.vectorSize; i++)
             {
                 new (tempArray + i) T(_other[i]);
             }
 
-            for (size_type i = 0; i < vectorSize; i++)
-            {
-                reinterpret_cast<T *>(array)[i].~T();
-            }
+            array = tempArray;
 
-            delete[] reinterpret_cast<char *>(array);
-
-            array = reinterpret_cast<T *>(tempArray);
-
-            vectorSize = _other.vectorSize;
             reservedSize = _other.reservedSize;
+            vectorSize = _other.vectorSize;
         }
         else
         {
             for (size_type i = 0; i < _other.vectorSize; i++)
             {
-                this->operator[](i) = _other[i];
+                array[i] = _other[i];
             }
 
             for (size_type i = _other.vectorSize; i < vectorSize; i++)
             {
-                reinterpret_cast<T *>(array)[i].~T();
+                array[i].~T();
             }
 
             vectorSize = _other.vectorSize;
             reservedSize = _other.reservedSize;
-
-            reallocate();
         }
 
         return *this;
     }
-
-
-
-
 
     // move assignment
     template <typename T>
@@ -311,7 +270,7 @@ namespace ds
             array[i].~T();
         }
 
-        delete[] reinterpret_cast<char *>(array);
+        ::operator delete(array);
 
         array = _other.array;
         vectorSize = _other.vectorSize;
@@ -324,9 +283,6 @@ namespace ds
         return *this;
     }
 
-
-
-
     template <typename T>
     typename vector<T>::reference vector<T>::at(size_type _index)
     {
@@ -337,8 +293,6 @@ namespace ds
         return *(array + _index);
     }
 
-
-
     template <typename T>
     typename vector<T>::const_reference vector<T>::at(size_type _index) const
     {
@@ -348,9 +302,6 @@ namespace ds
         }
         return *(array + _index);
     }
-
-
-
 
     template <typename T>
     void vector<T>::push_back(const T &_value)
@@ -370,9 +321,6 @@ namespace ds
         vectorSize++;
     }
 
-
-
-
     template <typename T>
     void vector<T>::push_back(T &&_value)
     {
@@ -391,10 +339,6 @@ namespace ds
         vectorSize++;
     }
 
-
-
-
-
     template <typename T>
     void vector<T>::pop_back()
     {
@@ -405,10 +349,6 @@ namespace ds
         }
     }
 
-
-
-
-
     template <typename T>
     void vector<T>::clear()
     {
@@ -418,100 +358,6 @@ namespace ds
         }
 
         vectorSize = 0;
-    }
-
-
-
-
-
-    template <typename T>
-    typename vector<T>::iterator vector<T>::insert(vector<T>::const_iterator _position, const T& _value)
-    {
-        std::cout << "inside insert\n";
-
-        size_type insert_index = _position.ptr - array;
-
-        if (vectorSize < reservedSize)
-        {
-            for(vector<T>::iterator it = begin() + vectorSize; it != _position; it--)
-            {
-            
-                new (it.ptr) T(*(it-1));
-                ((it - 1).ptr)->~T();
-            }
-            
-
-            new (_position.ptr) T(_value);
-
-            vectorSize++;
-        }
-
-        if (vectorSize == reservedSize)
-        {
-
-            reservedSize = reservedSize * 2;
-
-            T* tempArray = reinterpret_cast<T*>(new char[reservedSize * sizeof(T)]);
-
-            for(size_type i = 0; i < insert_index; i++)
-            {
-                new (tempArray + i) T(array[i]);
-            }
-
-            new (tempArray + insert_index) T(_value);
-
-            for(size_type i = insert_index; i < vectorSize; i++)
-            {
-                new (tempArray + i +1) T(array[i]);
-            }
-
-            for(int i =0; i<vectorSize; i++)
-            {
-                array[i].~T();
-            }
-
-            delete [] reinterpret_cast<char*>(array);
-
-            array = tempArray;
-
-            vectorSize++;
-        }
-        
-        
-        _position = array + insert_index;
-
-
-        return _position;
-        
-    }
-
-
-
-
-
-    template <typename T>
-    typename vector<T>::iterator vector<T>::insert(vector<T>::const_iterator _position, T&& _value)
-    {
-        return iterator(nullptr);
-    }
-
-
-
-
-
-    template <typename T>
-    typename vector<T>::iterator vector<T>::insert(vector<T>::const_iterator _position, size_type _count, const T& _value)
-    {
-        return iterator(nullptr);
-    }
-
-
-
-
-    template <typename T>
-    typename vector<T>::iterator vector<T>::insert(vector<T>::const_iterator _position, const std::initializer_list<T> _li)
-    {
-        return iterator(nullptr);
     }
 
 }
