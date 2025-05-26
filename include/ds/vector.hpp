@@ -72,6 +72,10 @@ namespace ds
 
         // modifiers
         void clear();
+        iterator insert(const_iterator _position, const T &_value);
+        iterator insert(const_iterator _position, T &&_value);
+        iterator insert(const_iterator _position, size_type _count, const T &_value_);
+        iterator insert(const_iterator _position, const std::initializer_list<T> _li);
 
         void push_back(const T &_value);
         void push_back(T &&_value);
@@ -359,5 +363,258 @@ namespace ds
 
         vectorSize = 0;
     }
+
+    template <typename T>
+    typename vector<T>::iterator vector<T>::insert(vector<T>::const_iterator _position, const T &_value)
+    {
+        std::cout << "inside insert\n";
+
+        const size_type insert_index = _position.base() - array;
+        iterator pos = begin() + insert_index; // convert to non-const iterator
+
+        if (vectorSize < reservedSize)
+        {
+            if (vectorSize != 0)
+            {
+                new (array + vectorSize) T(std::move(array[vectorSize - 1]));
+            }
+
+            for (size_t i = vectorSize - 1; i - 1 >= insert_index; i--)
+            {
+                array[i] = std::move(array[i - 1]);
+            }
+
+            new (pos.base()) T(_value);
+
+            vectorSize++;
+        }
+
+        if (vectorSize == reservedSize)
+        {
+            if (reservedSize == 0)
+            {
+                reservedSize = 1;
+            }
+            else
+            {
+                reservedSize = reservedSize * 2;
+            }
+
+            T *tempArray = static_cast<T *>(::operator new(reservedSize * sizeof(T)));
+
+            for (size_type i = 0; i < insert_index; i++)
+            {
+                new (tempArray + i) T(std::move(array[i]));
+            }
+
+            new (tempArray + insert_index) T(_value);
+
+            for (size_type i = insert_index; i < vectorSize; i++)
+            {
+                new (tempArray + i + 1) T(std::move(array[i]));
+            }
+
+            for (size_t i = 0; i < vectorSize; i++)
+            {
+                array[i].~T();
+            }
+
+            ::operator delete(array);
+
+            array = tempArray;
+
+            vectorSize++;
+        }
+
+        pos = begin() + insert_index;
+
+        return pos;
+    }
+
+    template <typename T>
+    typename vector<T>::iterator vector<T>::insert(vector<T>::const_iterator _position, T &&_value)
+    {
+        const size_type insert_index = _position.base() - array;
+        iterator pos = begin() + insert_index; // convert to non-const iterator
+
+        if (vectorSize < reservedSize)
+        {
+            if (vectorSize != 0)
+            {
+                new (array + vectorSize) T(std::move(array[vectorSize - 1]));
+            }
+
+            for (size_t i = vectorSize - 1; i - 1 >= insert_index; i--)
+            {
+                array[i] = std::move(array[i - 1]);
+            }
+
+            new (pos.base()) T(std::move(_value));
+
+            vectorSize++;
+        }
+
+        if (vectorSize >= reservedSize)
+        {
+
+            if (reservedSize == 0)
+            {
+                reservedSize = 1;
+            }
+            else
+            {
+                reservedSize = reservedSize * 2;
+            }
+
+            T *tempArray = static_cast<T *>(::operator new(reservedSize * sizeof(T)));
+
+            for (size_type i = 0; i < insert_index; i++)
+            {
+                new (tempArray + i) T(std::move(array[i]));
+            }
+
+            new (tempArray + insert_index) T(std::move(_value));
+
+            for (size_type i = insert_index; i < vectorSize; i++)
+            {
+                new (tempArray + i + 1) T(std::move(array[i]));
+            }
+
+            for (size_t i = 0; i < vectorSize; i++)
+            {
+                array[i].~T();
+            }
+
+            ::operator delete(array);
+
+            array = tempArray;
+
+            vectorSize++;
+        }
+
+        pos = begin() + insert_index;
+
+        return pos;
+    }
+
+    template <typename T>
+    typename vector<T>::iterator vector<T>::insert(vector<T>::const_iterator _position, size_type _count, const T &_value)
+    {
+        const size_type insert_index = _position.base() - array;
+        iterator pos = begin() + insert_index; // convert to non-const iterator
+
+        if (vectorSize + _count - 1 < reservedSize)
+        {
+            for (size_t i = vectorSize - 1 + _count; i - _count >= insert_index; i--)
+            {
+                array[i] = T(std::move(array[i - _count]));
+            }
+
+            for (size_t i = 0; i < _count; i++)
+            {
+                new (pos.base()) T(_value);
+                pos++;
+            }
+        }
+
+        if (vectorSize + _count - 1 >= reservedSize)
+        {
+            reservedSize = vectorSize + _count;
+
+            T *tempArray = static_cast<T *>(::operator new(reservedSize * sizeof(T)));
+
+            for (size_type i = 0; i < insert_index; i++)
+            {
+                new (tempArray + i) T(std::move(array[i]));
+            }
+
+            for (size_t i = 0; i < _count; i++)
+            {
+                new (tempArray + insert_index + i) T(_value);
+            }
+
+            for (size_type i = insert_index; i < vectorSize; i++)
+            {
+                new (tempArray + i + _count) T(std::move(array[i]));
+            }
+
+            for (size_t i = 0; i < vectorSize; i++)
+            {
+                array[i].~T();
+            }
+
+            ::operator delete(array);
+
+            array = tempArray;
+        }
+
+        vectorSize = vectorSize + _count;
+
+        pos = begin() + insert_index;
+
+        return pos;
+    }
+
+    template <typename T>
+    typename vector<T>::iterator vector<T>::insert(vector<T>::const_iterator _position, const std::initializer_list<T> _li)
+    {
+        const size_type insert_index = _position.base() - array;
+        iterator pos = begin() + insert_index; // convert to non-const iterator
+        size_t count = _li.size();
+
+        if (vectorSize + count - 1 < reservedSize)
+        {
+            for (size_t i = vectorSize - 1 + count; i - count >= insert_index; i--)
+            {
+                array[i] = T(std::move(array[i - count]));
+            }
+
+            for (typename std::initializer_list<T>::const_iterator it = _li.begin(); it != _li.end(); it++)
+            {
+                new (pos.base()) T(std::move(*it));
+                pos++;
+            }
+        }
+
+        if (vectorSize + count - 1 >= reservedSize)
+        {
+
+            reservedSize = reservedSize * 2;
+
+            T *tempArray = static_cast<T *>(::operator new(reservedSize * sizeof(T)));
+
+            for (size_type i = 0; i < insert_index; i++)
+            {
+                new (tempArray + i) T(std::move(array[i]));
+            }
+
+            for (size_t i = 0; i < count; i++)
+            {
+                new (tempArray + insert_index + i) T(std::move(*(_li.begin() + i)));
+            }
+
+            for (size_type i = insert_index; i < vectorSize; i++)
+            {
+                new (tempArray + i + count) T(std::move(array[i]));
+            }
+
+            for (size_t i = 0; i < vectorSize; i++)
+            {
+                array[i].~T();
+            }
+
+            ::operator delete(array);
+
+            array = tempArray;
+        }
+
+        vectorSize = vectorSize + count;
+
+        pos = begin() + insert_index;
+
+        return pos;
+    }
+
+    
 
 }
